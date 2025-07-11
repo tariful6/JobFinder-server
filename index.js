@@ -42,6 +42,28 @@ async function run() {
       res.send(result)
     })
 
+    // get all job data based on email from db ----------
+    app.get('/job/:email', async(req, res)=>{
+      const email = req.params.email
+      const query = {'buyer.email' : email}
+      const result = await jobCollection.find(query).toArray()
+      res.send(result)
+    })
+
+    // save a job data in db ----------
+    app.post('/job', async(req, res)=> {
+      const jobData = req.body;
+      const result = await jobCollection.insertOne(jobData)
+      res.send(result)
+    })
+
+    // save a bid data in db ----------
+    app.post('/bid', async(req, res)=>{
+      const bidData = req.body;
+      const result = await bidCollection.insertOne(bidData);
+      res.send(result)
+    })
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });

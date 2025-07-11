@@ -2,11 +2,14 @@ const express = require('express')
 const cors = require('cors')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser')
 const app = express()
 const port = process.env.PORT || 5000;
 
 app.use(cors())
 app.use(express.json())
+app.use(cookieParser())
 
 
 
@@ -80,10 +83,39 @@ async function run() {
       res.send(result)
     })
 
+     // get all bid data using email from db ----------
+     app.get('/bids/:email', async(req, res)=>{
+      const email = req.params.email;
+      const query = { email : email };
+      const result = await bidCollection.find(query).toArray();
+      res.send(result)
+    })
+
+     // get all bid request data using email from db ----------
+     app.get('/bid-request/:email', async(req, res)=>{
+      const email = req.params.email;
+      const query = { 'buyer.email' : email };
+      const result = await bidCollection.find(query).toArray();
+      res.send(result)
+    })
+
+    
     // save a bid data in db ----------
     app.post('/bid', async(req, res)=>{
       const bidData = req.body;
       const result = await bidCollection.insertOne(bidData);
+      res.send(result)
+    })
+
+    // update bid status in db ----------
+    app.patch('/bids/:id', async(req, res)=> {
+      const id = req.params.id;
+      const status = req.body;
+      const query = {_id : new ObjectId(id)}
+      const updateDoc = {
+        $set : status
+      }
+      const result = await bidCollection.updateOne(query, updateDoc )
       res.send(result)
     })
 

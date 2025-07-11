@@ -1,6 +1,6 @@
 const express = require('express')
 const cors = require('cors')
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const app = express()
 const port = process.env.PORT || 5000;
@@ -28,8 +28,17 @@ async function run() {
     const jobCollection = client.db('soloSphere').collection('jobs')
     const bidCollection = client.db('soloSphere').collection('bids')
 
+    // for get all jobs ----------
     app.get('/jobs', async(req, res)=>{
       const result = await jobCollection.find().toArray();
+      res.send(result)
+    })
+
+    // for get single job from all jobs ----------
+    app.get('/jobs/:id', async(req, res)=>{
+      const id = req.params.id;
+      const query = {_id : new ObjectId(id)}
+      const result = await jobCollection.findOne(query)
       res.send(result)
     })
 

@@ -22,10 +22,10 @@ const verifyToken = (req, res, next) => {
     if(token){
         jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded)=> {
           if(err){
-            console.log(err);
+            // console.log(err);
             return  res.status(401).send({message : 'unauthorized access'})
           }
-          console.log(decoded);
+          // console.log(decoded);
           req.user = decoded;
           next()
         })
@@ -151,14 +151,28 @@ async function run() {
 
     
     // save a bid data in db ----------
-    app.post('/bid', async(req, res)=>{
+    app.post('/bid', verifyToken, async(req, res)=>{
       const bidData = req.body;
+      // check if data already apply or not ------
+      const query =  {
+        email : bidData.email,
+        job_id : bidData.job_id
+      }
+      const alreadyApplied = await bidCollection.findOne(query)
+      if (alreadyApplied) {
+        return res
+          .status(400)
+          .send('You have already placed a bid on this job.')
+      }
+
       const result = await bidCollection.insertOne(bidData);
       res.send(result)
     })
 
+
+
     // update bid status in db ----------
-    app.patch('/bids/:id', async(req, res)=> {
+    app.patch('/bids/:id', verifyToken, async(req, res)=> {
       const id = req.params.id;
       const status = req.body;
       const query = {_id : new ObjectId(id)}

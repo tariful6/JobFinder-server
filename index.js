@@ -15,6 +15,26 @@ app.use(express.json())
 app.use(cookieParser())
 
 
+// verify jwt middleWare -------------
+const verifyToken = (req, res, next) => {
+    const token = req.cookies?.token
+    if(!token) return res.status(401).send({message : 'unauthorized access'})
+    if(token){
+        jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded)=> {
+          if(err){
+            console.log(err);
+            return  res.status(401).send({message : 'unauthorized access'})
+          }
+          console.log(decoded);
+          req.user = decoded;
+          next()
+        })
+      }
+
+  
+}
+
+
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.yy3zscc.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -36,8 +56,8 @@ async function run() {
 
     // Jwt related api ----------------------
     app.post('/jwt', async(req, res)=>{
-      const user = req.body;
-      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+      const email = req.body;
+      const token = jwt.sign(email, process.env.ACCESS_TOKEN_SECRET, {
         expiresIn : '1h'
       })
       res.cookie('token', token, {
@@ -71,8 +91,13 @@ async function run() {
     })
 
     // get all job data based on email from db ----------
-    app.get('/job/:email', async(req, res)=>{
+    app.get('/job/:email', verifyToken, async(req, res)=>{
+      const tokenEmail = req.user.email;
       const email = req.params.email
+      if(tokenEmail !== email){
+         return res.status(403).send({message : 'forbidden access'})
+      }
+
       const query = {'buyer.email' : email}
       const result = await jobCollection.find(query).toArray()
       res.send(result)
@@ -87,7 +112,7 @@ async function run() {
     })
 
     // update posted job from db ----------
-    app.put('/job/:id', async(req, res)=>{
+    app.put('/job/:id', verifyToken, async(req, res)=>{
       const id = req.params.id
       const jobData = req.body;
       const query = {_id: new ObjectId(id)}
@@ -109,7 +134,7 @@ async function run() {
     })
 
      // get all bid data using email from db ----------
-     app.get('/bids/:email', async(req, res)=>{
+     app.get('/bids/:email', verifyToken, async(req, res)=>{
       const email = req.params.email;
       const query = { email : email };
       const result = await bidCollection.find(query).toArray();
@@ -117,7 +142,7 @@ async function run() {
     })
 
      // get all bid request data using email from db ----------
-     app.get('/bid-request/:email', async(req, res)=>{
+     app.get('/bid-request/:email', verifyToken, async(req, res)=>{
       const email = req.params.email;
       const query = { 'buyer.email' : email };
       const result = await bidCollection.find(query).toArray();

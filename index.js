@@ -184,6 +184,41 @@ async function run() {
     })
 
 
+    //  all jobs for pagination  -------------------------------------------
+    app.get('/all-jobs', async(req, res)=>{
+      const size = parseInt(req.query.size)
+      const  page = parseInt(req.query.page) - 1 
+      const filter = req.query.filter
+      const sort = req.query.sort
+      const search = req.query.search
+
+      let query = {
+        job_title: { $regex : search, $options : 'i' },
+      }
+
+      if(filter) query.category  = filter;
+
+      let options = {}
+      if(sort) options = {sort : {deadline : sort === 'asc' ? 1 : -1} }
+
+      const result = await jobCollection.find( query, options ).skip(page * size).limit(size).toArray();
+      res.send(result)
+    })
+    //  all jobs count for pagination  -------------------------------------------
+    app.get('/jobs-count', async(req, res)=>{
+      const filter = req.query.filter
+      const search = req.query.search
+
+      let query = {
+        job_title: { $regex : search, $options : 'i' },
+      }
+      
+      if(filter) query.category  = filter;
+      const count = await jobCollection.countDocuments(query)
+      res.send({count})
+    })
+
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
